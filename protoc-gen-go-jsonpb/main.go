@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"go/format"
 	"io/ioutil"
@@ -42,26 +41,9 @@ func (msg *{{.GetName}}) UnmarshalJSON(src []byte) error {
     return jsonpb.UnmarshalString(string(src), msg)
 }
 `))
-	file = flag.String("file", "stdin", "where to load data from")
 )
 
 func main() {
-	flag.Parse()
-
-	var err error
-
-	log.Print("Processing code generator request")
-	//f := os.Stdin
-	//if *file != "stdin" {
-	//	f, err = os.Open("input.txt")
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	defer f.Close()
-	//}
-
-	log.Print("Parsing code generator request")
-
 	input, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
@@ -71,7 +53,6 @@ func main() {
 	if err = proto.Unmarshal(input, req); err != nil {
 		log.Fatal(err)
 	}
-	log.Print("Parsed code generator request")
 
 	out, err := generate(req)
 
