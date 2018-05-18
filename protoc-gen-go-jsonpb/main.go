@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"go/format"
 	"io/ioutil"
@@ -42,26 +41,9 @@ func (msg *{{.GetName}}) UnmarshalJSON(src []byte) error {
     return jsonpb.UnmarshalString(string(src), msg)
 }
 `))
-	file = flag.String("file", "stdin", "where to load data from")
 )
 
 func main() {
-	flag.Parse()
-
-	var err error
-
-	log.Print("Processing code generator request")
-	//f := os.Stdin
-	//if *file != "stdin" {
-	//	f, err = os.Open("input.txt")
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	defer f.Close()
-	//}
-
-	log.Print("Parsing code generator request")
-
 	input, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
@@ -71,7 +53,6 @@ func main() {
 	if err = proto.Unmarshal(input, req); err != nil {
 		log.Fatal(err)
 	}
-	log.Print("Parsed code generator request")
 
 	out, err := generate(req)
 
@@ -85,7 +66,16 @@ func main() {
 
 func generate(req *plugin.CodeGeneratorRequest) ([]*plugin.CodeGeneratorResponse_File, error) {
 	var files []*plugin.CodeGeneratorResponse_File
+	genFileNames := make(map[string]bool)
+	for _, n := range req.FileToGenerate {
+		genFileNames[n] = true
+	}
 	for _, desc := range req.GetProtoFile() {
+		name := desc.GetName()
+		if _, ok := genFileNames[name]; !ok {
+			// Only emit output for files present in req.FileToGenerate.
+			continue
+		}
 		code, err := genCode(desc)
 		if err != nil {
 			return nil, err
@@ -96,7 +86,6 @@ func generate(req *plugin.CodeGeneratorRequest) ([]*plugin.CodeGeneratorResponse
 			return nil, err
 		}
 
-		name := desc.GetName()
 		ext := filepath.Ext(name)
 		base := strings.TrimSuffix(name, ext)
 		output := fmt.Sprintf("%s.pb.jsonpb.go", base)
