@@ -24,6 +24,8 @@ var (
 package {{.GoPkg}}
 
 import (
+    "strings"
+
     "github.com/golang/protobuf/jsonpb"
 )
 `))
@@ -38,7 +40,8 @@ func (msg *{{.GetName}}) MarshalJSON() ([]byte, error) {
 }
 
 func (msg *{{.GetName}}) UnmarshalJSON(src []byte) error {
-    return jsonpb.UnmarshalString(string(src), msg)
+    u := jsonpb.Unmarshaler{AllowUnknownFields: true}
+    return u.Unmarshal(strings.NewReader(string(src)), msg)
 }
 `))
 )
